@@ -74,18 +74,7 @@ For feature engineering, the weekday variables are one hot encoded. These were d
 ### Model fitting
 #### Train / test splitting
 
-The train/test split was done by splitting on a particular static date, which was 2016-01-01, for the statsforecast models. I calulated around 80% of the data to be in the train data. The code looked like this:
-
-```python
-df_long['ds'] = pd.to_datetime(df_long['ds'], format='%Y-%m')
-split_date = '2016-01-01'
-df_long['split'] = np.where(df_long.ds < split_date, 'train', 'test')
-df_long['unique_id'] = 0
-train_data = df_long[df_long['split']=='train'].drop('split', axis=1).copy()
-test_data = df_long[df_long['split']=='test'].drop('split', axis=1).copy()
-df_long = df_long.dropna()
-df_long
-```
+The train/test split was done by splitting on a particular static date, which was 2016-01-01, for the statsforecast models. I calulated around 80% of the data to be in the train data.
 
 For my XGBoost model, I used the TimeSeriesSplit() in sklearn. This makes n number of slpits, and in my model, n=5. Lastly, for the RNN, I used df.loc() with date rangles for the train data, validation data, and test data. For all of these different splits, this ensures no data leakage. My biggest problem with data leakage came from lagging the target varaible the wrong way. This exposed the the model to future data that it was not supposed to see. After I noticed this I fixed it and in re-ran all models. 
 
@@ -95,26 +84,7 @@ For this project, I have ran a multitude of models. First, out of the statsforec
 
 #### Hyperparameter Testing 
 
-For the XGBoost model, I used grid search for the hyperparameters. The code below shows this process
-
-```python 
-param_grid = {
-    'max_depth': np.arange(2, 4).tolist(),
-    'min_child_weight': np.arange(30, 40, 5).tolist(),
-    'early_stopping_rounds': np.arange(60, 80, 5).tolist()
-}
-
-grid_search = GridSearchCV(estimator=XGBRegressor(objective='reg:squarederror',
-                                                   random_state=42,
-                                                   alpha=.01,
-                                                   n_jobs=-1,
-                                                   n_estimators=800,
-                                                   eta=.01),
-                           param_grid=param_grid,
-                           cv=tscv,
-                           scoring='neg_mean_squared_error',
-                           n_jobs=-1)
-```
+For the XGBoost model, I used grid search for the hyperparameters. The grid search included many hyperparameters including `max_depth`,`min_child_weight`,`early_stopping_rounds`,`alpha`,`n_estimators`,and `eta`.
 
 For the hyperparameters in the param_grid, this is what was changing the most. The alpha, n_estimators, and eta were all in the param_grid at first but they wouldn't change much so I took them out of the param_grid and set them equal to a constant to save some time training the model. This was were most of the time was spent, tuning these hyperparameters to try to minimze overfitting. 
 
